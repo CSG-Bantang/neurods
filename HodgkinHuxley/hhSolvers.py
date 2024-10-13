@@ -1,17 +1,18 @@
 #!/usr/bin/env python3
 # -*- coding: utf-8 -*-
 """
-Created on Sat Oct  5 00:01:02 2024
+Created on Sun Oct 13 13:45:44 2024
 
 @author: reinierramos
 """
 
 import numpy as np
-from .hhODEs import odes, m_inf, h_inf, n_inf
+from .sschannels import (m_inf, h_inf, n_inf)
+from .hhodes import odes
 from scipy.integrate import odeint
 
 
-def lsoda(tList, Iparams):
+def lsoda(tList, hhparams):
     """
     Solve the ODEs using LSODA (Livermore Solver for Ordinary Differential
     Equations) via the implementation of `scipy.integrate.odeint`).
@@ -20,7 +21,7 @@ def lsoda(tList, Iparams):
     ----------
     tList : 1D array
         List of time values to solve the ODE.
-    Iparams : dict
+    hhparams : dict
         Container for parameters valid for each type of stimulus input.
 
     Returns
@@ -28,7 +29,9 @@ def lsoda(tList, Iparams):
     soln : 2D ndarray
         Values of V, m, h, n for al `t` in `tList`.
 
-    Valid keywords in `Iparams`:
+    Valid keywords in `hhparams`:
+        Vrest : float
+            Resting voltage.
         system : str
             Type of HH system ('single', 'noisy', 'coupled', 'noisy coupled').
         dt : float
@@ -41,13 +44,12 @@ def lsoda(tList, Iparams):
             Frequency, in Hz, of the sine input.
 
     """
-    Vrest = 0
-    guess = [Vrest,m_inf(Vrest), h_inf(Vrest), n_inf(Vrest)]
-    # guess   = np.array([-0.283, 0.051, 0.584, 0.321])
-    soln   = odeint(odes, guess, tList, args=(Iparams,))
+    Vrest = hhparams.get('Vrest')
+    guess = [Vrest, m_inf(Vrest), h_inf(Vrest), n_inf(Vrest)]
+    soln   = odeint(odes, guess, tList, args=(hhparams,))
     return soln
 
-def euler(tList, Iparams):
+def euler(tList, hhparams):
     """
     Solve the ODEs using the forward Euler method.
 
@@ -55,7 +57,7 @@ def euler(tList, Iparams):
     ----------
     tList : 1D array
         List of time values to solve the ODE.
-    Iparams : dict
+    hhparams : dict
         Container for parameters valid for each type of stimulus input.
 
     Returns
@@ -64,6 +66,8 @@ def euler(tList, Iparams):
         Values of V, m, h, n for al `t` in `tList`.
         
     Valid keywords in `params_`:
+        Vrest : float
+            Resting voltage.
         system : str
             Type of HH system ('single', 'noisy', 'coupled', 'noisy coupled').
         dt : float
@@ -88,33 +92,32 @@ def euler(tList, Iparams):
             Uniform coupling strength of each neuron to its neighbors in the lattice.
 
     """
-    dt = Iparams.get('dt')
-    # Vrest = 0
-    # guess = [Vrest,m_inf(Vrest), h_inf(Vrest), n_inf(Vrest)]
-    guess   = np.array([-0.283, 0.051, 0.584, 0.321])
-    if 'coupled' in Iparams.get('system'):
-        soln = np.zeros([Iparams.get('pop'), len(tList), 4])
+    dt = hhparams.get('dt')
+    Vrest = hhparams.get('Vrest')
+    guess = np.array([Vrest,m_inf(Vrest), h_inf(Vrest), n_inf(Vrest)])
+    if 'coupled' in hhparams.get('system'):
+        soln = np.zeros([hhparams.get('pop'), len(tList), 4])
         soln[:,0,:] = guess
         guess = soln[:,0,:]
     else:
         soln    = np.zeros([len(tList), 4])
         soln[0] = guess
     for _i in range(len(tList)-1):
-        if 'noisy' in Iparams.get('system'):
-            noise_ = Iparams.get('noise')[_i]
-            Iparams.update({'noise_t': noise_})
-        if 'coupled' in Iparams.get('system'):
-            Vi = np.tile(soln[:,_i,0], (Iparams.get('pop'),1))
+        if 'noisy' in hhparams.get('system'):
+            noise_ = hhparams.get('noise')[_i]
+            hhparams.update({'noise_t': noise_})
+        if 'coupled' in hhparams.get('system'):
+            Vi = np.tile(soln[:,_i,0], (hhparams.get('pop'),1))
             Vj = Vi.T
             Vij = Vi-Vj
-            Iparams.update({'Vij':Vij})
-        next_ = odes(guess, tList[_i+1], Iparams).T
+            hhparams.update({'Vij':Vij})
+        next_ = odes(guess, tList[_i+1], hhparams).T
         guess += next_*dt
-        if 'coupled' in Iparams.get('system'): soln[:,_i+1, :] = guess
+        if 'coupled' in hhparams.get('system'): soln[:,_i+1, :] = guess
         else: soln[_i+1] = guess
     return soln
 
-def rk4(tList, Iparams):
+def rk4(tList, hhparams):
     """
     Solve the ODEs using the 4th-order Runge-Kutta method.
 
@@ -122,7 +125,7 @@ def rk4(tList, Iparams):
     ----------
     tList : 1D array
         List of time values to solve the ODE.
-    Iparams : dict
+    hhparams : dict
         Container for parameters valid for each type of stimulus input.
 
     Returns
@@ -131,6 +134,8 @@ def rk4(tList, Iparams):
         Values of V, m, h, n for al `t` in `tList`.
         
     Valid keywords in `params_`:
+        Vrest : float
+            Resting voltage.
         system : str
             Type of HH system ('single', 'noisy', 'coupled', 'noisy coupled').
         dt : float
@@ -155,31 +160,30 @@ def rk4(tList, Iparams):
             Uniform coupling strength of each neuron to its neighbors in the lattice.
 
     """
-    dt = Iparams.get('dt')
-    # Vrest = 0
-    # guess = [Vrest,m_inf(Vrest), h_inf(Vrest), n_inf(Vrest)]
-    guess   = np.array([-0.283, 0.051, 0.584, 0.321])
-    if 'coupled' in Iparams.get('system'):
-        soln = np.zeros([Iparams.get('pop'), len(tList), 4])
+    dt = hhparams.get('dt')
+    Vrest = hhparams.get('Vrest')
+    guess = np.array([Vrest, m_inf(Vrest), h_inf(Vrest), n_inf(Vrest)])
+    if 'coupled' in hhparams.get('system'):
+        soln = np.zeros([hhparams.get('pop'), len(tList), 4])
         soln[:,0,:] = guess
         guess = soln[:,0,:]
     else:
         soln    = np.zeros([len(tList), 4])
         soln[0] = guess
     for _i in range(len(tList)-1):
-        if 'noisy' in Iparams.get('system'):
-            noise_ = Iparams.get('noise')[_i]
-            Iparams.update({'noise_t': noise_})
-        if 'coupled' in Iparams.get('system'):
-            Vi = np.tile(soln[:,_i,0], (Iparams.get('pop'),1))
+        if 'noisy' in hhparams.get('system'):
+            noise_ = hhparams.get('noise')[_i]
+            hhparams.update({'noise_t': noise_})
+        if 'coupled' in hhparams.get('system'):
+            Vi = np.tile(soln[:,_i,0], (hhparams.get('pop'),1))
             Vj = Vi.T
             Vij = Vi-Vj
-            Iparams.update({'Vij':Vij})
-        k1 = dt * odes(guess,        tList[_i+1],        Iparams).T
-        k2 = dt * odes(guess+0.5*k1, tList[_i+1]+0.5*dt, Iparams).T
-        k3 = dt * odes(guess+0.5*k2, tList[_i+1]+0.5*dt, Iparams).T
-        k4 = dt * odes(guess+k3,     tList[_i+1]+dt,     Iparams).T
+            hhparams.update({'Vij':Vij})
+        k1 = dt * odes(guess,        tList[_i+1],        hhparams).T
+        k2 = dt * odes(guess+0.5*k1, tList[_i+1]+0.5*dt, hhparams).T
+        k3 = dt * odes(guess+0.5*k2, tList[_i+1]+0.5*dt, hhparams).T
+        k4 = dt * odes(guess+k3,     tList[_i+1]+dt,     hhparams).T
         guess += (k1 + 2*(k2+k3) + k4)/6
-        if 'coupled' in Iparams.get('system'): soln[:,_i+1, :] = guess
+        if 'coupled' in hhparams.get('system'): soln[:,_i+1, :] = guess
         else: soln[_i+1] = guess
     return soln

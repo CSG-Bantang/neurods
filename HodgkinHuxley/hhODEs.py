@@ -1,12 +1,13 @@
 #!/usr/bin/env python3
 # -*- coding: utf-8 -*-
 """
-Created on Sat Oct  5 00:07:10 2024
+Created on Sun Oct 13 13:39:15 2024
 
 @author: reinierramos
 """
 
 import numpy as np
+from .bte import (alphah, alpham, alphan, betah, betam, betan)
 
 C   =    1
 GNa =  120
@@ -48,19 +49,6 @@ def odes(vars_, t, params_):
     dhdt = alphah(V)*(1-h) - betah(V)*h
     dndt = alphan(V)*(1-n) - betan(V)*n
     return np.array([dVdt, dmdt, dhdt, dndt])
-
-### Boltzmann Transport Equations
-def alphan(V_): return 0.01*(10-V_) / (np.exp((10-V_)/10)-1)
-def alpham(V_): return 0.1*(25-V_) / (np.exp((25-V_)/10)-1) 
-def alphah(V_): return 0.07*np.exp(-V_/20)
-def betah(V_):  return 1 / (np.exp((30-V_)/10)+1)
-def betam(V_):  return 4*np.exp(-V_/18)
-def betan(V_):  return 0.125*np.exp(-V_/80)
-
-### Steady-State Values of Channels
-def n_inf(V_=0.0):  return alphan(V_) / (alphan(V_) + betan(V_))
-def m_inf(V_=0.0):  return alpham(V_) / (alpham(V_) + betam(V_))
-def h_inf(V_=0.0):  return alphah(V_) / (alphah(V_) + betah(V_))
 
 def Iext(params_, t):
     """

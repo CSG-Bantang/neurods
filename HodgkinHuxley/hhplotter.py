@@ -1,20 +1,14 @@
 #!/usr/bin/env python3
 # -*- coding: utf-8 -*-
 """
-Created on Fri Oct  4 22:41:46 2024
+Created on Sun Oct 13 13:59:04 2024
 
 @author: reinierramos
 """
 
 import numpy as np
-import networkx as nx
-from .hhSolvers import lsoda, euler, rk4
-from matplotlib import pyplot as plt
-from numpy import random as nrand
-
 import matplotlib as mpl
-
-rng = nrand.default_rng()
+from matplotlib import pyplot as plt
 
 axislabelsFontsize     = 17
 titleFontsize          = 15
@@ -28,90 +22,6 @@ figureParameters = {  'axes.labelsize' : axislabelsFontsize
                     , 'image.origin'   : 'lower'
                     }
 mpl.rcParams.update(figureParameters)
-
-solvers = {'lsoda': lsoda, 'euler': euler, 'rk4':rk4}
-
-class SolverError(Exception):
-    def __init__(self, system, solver
-                , msg='LSODA is incompatible to noisy and coupled systems.'):
-        self.system=system
-        self.solver=solver
-        super().__init__(msg)
-
-def solveHH(system='single', solver='euler', 
-            I0=0, Is=0, fs=0, ti=0, tf=100, dt=0.025, **kwargs):
-    """
-    Solves the Hodgkin-Huxley (HH) `system` using `solver`. 
-
-    Parameters
-    ----------
-    system : str, default is 'single'
-        Type of HH system to solve.
-        Accepted values are: 'single', 'noisy', 'coupled', 'noisy coupled'.
-    solver : str, default is 'euler'
-        Method of solving ODEs
-        Accepted values are: 'lsoda', 'euler', 'rk4'.
-    I0 : float, default is 0
-        Amplitude, in uA/cm^2, of the constant or bias current.
-        If no dynamics is observed, then provide a nonzero value.
-    Is : float, default is 0
-        Amplitude, in uA/cm^2, of the sine input.
-    fs : float, default is 0
-        Frequency, in Hz, of the sine input.
-        Must be nonzero when `Is` is nonzero.
-    ti : float, default is 0
-        Initial time, in ms, for stimulus duration.
-    tf : float, default is 100
-        Final time, in ms, for stimulus duration.
-    dt : float, default is 0.025
-        Timestep size, in ms.
-        The stimulus duration is obtained as `np.arange(ti,tf,dt)`.
-    **kwargs : dict
-        Container for parameters valid for each type of stimulus input.
-
-    Raises
-    ------
-    SolverError
-        If `solver` is 'LSODA' but the `system` is either 'noisy', 'coupled', 
-        or 'noisy coupled.'
-
-    Returns
-    -------
-    soln : 2D or 3D ndarray
-        Values of V, m, h, n for all `t` in `tList`.
-    tList : 1D ndarray
-        Time points for which HH is evaluated.
-
-    Valid keywords in `**kwargs`:
-        In : float
-            Amplitude, in uA/cm^2, of the noisy input.
-        L : int
-            Lattice size.
-        g : float
-            Uniform coupling strength of each neuron to its neighbors in the lattice.
-
-    """
-    if solver=='lsoda' and system!='single':  raise SolverError(system, solver)
-    
-    tList = makeTimeList(ti, tf, dt)
-    
-    if 'coupled' in system:
-        L = kwargs.get('L')
-        population = L*L
-        G = nx.grid_2d_graph(L,L)  
-        adjMat = nx.to_numpy_array(G)
-        adjMat = np.triu(adjMat, k=0)
-        kwargs.update({'aij':adjMat, 'pop':population})
-        
-    if 'noisy' in system:
-        noise = rng.random(len(tList)) - 0.5
-        kwargs.update({'noise':noise})
-    kwargs.update({'I0':I0, 'Is':Is, 'fs':fs, 'dt':dt, 'system':system})
-    solver_ = solvers.get(solver)
-    soln = solver_(tList, kwargs).T
-    return soln, tList
-
-def makeTimeList(ti=0, tf=100, dt=0.025):   return np.arange(ti, tf, dt)
 
 def plotVoltage(soln, tList):
     """
@@ -189,3 +99,50 @@ def plotChannels(soln, tList):
     plt.legend(fontsize=12, loc=1)
     ax.locator_params(axis='both', tight=True, nbins=5)
     return fig, ax
+
+def plotAsympChannels(Vspace, asymp_m, asymp_h, asymp_n):
+    fig, ax = plt.subplots(figsize=(6,4),
+                           subplot_kw=dict(xlim=(Vspace[0]-0.5, Vspace[-1]+0.5)
+                                         , ylim=(-0.05,1.05)
+                                         , xlabel='Time, in ms'
+                                         , ylabel='Gating channel'))
+    ax.plot(Vspace, asymp_m, color='darkgreen', lw=2, label='Na activation')
+    ax.plot(Vspace, asymp_h, color='turquoise', lw=2, label='Na inactivation')
+    ax.plot(Vspace, asymp_n, color='goldenrod', lw=2, label='K activation')
+    plt.legend(fontsize=12, loc=0)
+    ax.locator_params(axis='both', tight=True, nbins=5)
+    return fig, ax
+
+def plotTimeConstants(Vspace, tau_m, tau_h, tau_n):
+    _max = np.max(np.ceil(np.array([tau_m, tau_h, tau_n])))
+    _min = np.min(np.floor(np.array([tau_m, tau_h, tau_n])))
+    fig, ax = plt.subplots(figsize=(6,4),
+                           subplot_kw=dict(xlim=(Vspace[0]-0.5, Vspace[-1]+0.5)
+                                         , ylim=(_min-.05,_max+.05)
+                                         , xlabel='Time, in ms'
+                                         , ylabel='Time constant'))
+    ax.plot(Vspace, tau_m, color='darkgreen', lw=2, label='Na activation')
+    ax.plot(Vspace, tau_h, color='turquoise', lw=2, label='Na inactivation')
+    ax.plot(Vspace, tau_n, color='goldenrod', lw=2, label='K activation')
+    plt.legend(fontsize=12, loc=0)
+    ax.locator_params(axis='both', tight=True, nbins=5)
+    return fig, ax
+
+def plotISI(Ispace, ISIspace):
+    _max = np.max(ISIspace)
+    _min = np.min(ISIspace)
+    fig, ax = plt.subplots(figsize=(6,6),
+                           subplot_kw=dict(xlim=(Ispace[0]-0.5, Ispace[-1]+0.5)
+                                         , ylim=(_min-.005,_max+.005)
+                                         , xlabel=r'Input current, $I_{\rm ext}~\left( \frac{\mu A}{cm^2}\right)$'
+                                         , ylabel=r'Firing rate, $r$ (spikes/ms)'))
+    ax.scatter(Ispace, ISIspace, s=70, edgecolors='darkslategrey', facecolors='None')
+    ax.locator_params(axis='both', tight=True, nbins=5)
+    return fig, ax
+
+
+
+
+
+
+

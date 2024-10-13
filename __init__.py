@@ -1,24 +1,15 @@
 #!/usr/bin/env python3
 # -*- coding: utf-8 -*-
 """
-Created on Sat Oct  5 15:13:36 2024
+Created on Sun Oct 13 13:53:25 2024
 
 @author: reinierramos
 """
 
-from .hhSolve import (solveHH, makeTimeList, plotVoltage, plotChannels)
-from .hhODEs import (odes, alpham, alphah, alphan, betam, betah, betan, 
-                     m_inf, h_inf, n_inf, Iext)
-from .hhSolvers import lsoda, euler, rk4
-
-from .lmSolve import (solveLM, logisticEquation, logisticReturnMap, plotXvsT, plotReturnMap)
-from .lcaSolve import (solveLCA, animateLCA)
-
-from .golutils import (updateGrid, countAliveNeighbors, golRules)
-from .golSolve import (solveGOL, animateGOL)
-
-from .bbutils import updateGrid
-from .bbSolve import (solveBB, animateBB)
-
-from .ncaSolve import (solveNCA, animateNCA, animate3D)
-from .lncaSolve import (solveLayerNCA, animateLNCA,animate3DLNCA)
+from .hhodes import (odes, Iext)
+from .bte import (alphah, alpham, alphan, betah, betam, betan)
+from .sschannels import (m_inf, h_inf, n_inf, tau_m, tau_h, tau_n)
+from .hhsolvers import (lsoda, euler, rk4)
+from .hhanalysis import (solveHH, asymptoticChannels, timeConstants, firingRate)
+from .hhplotter import (plotVoltage, plotChannels, plotAsympChannels, 
+                        plotTimeConstants, plotISI)
