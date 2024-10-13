@@ -8,7 +8,7 @@ Created on Sun Oct 13 13:45:44 2024
 
 import numpy as np
 from .sschannels import (m_inf, h_inf, n_inf)
-from .hhodes import odes
+from .hhodes import odes, Iext
 from scipy.integrate import odeint
 
 
@@ -46,8 +46,9 @@ def lsoda(tList, hhparams):
     """
     Vrest = hhparams.get('Vrest')
     guess = [Vrest, m_inf(Vrest), h_inf(Vrest), n_inf(Vrest)]
-    soln   = odeint(odes, guess, tList, args=(hhparams,))
-    return soln
+    soln  = odeint(odes, guess, tList, args=(hhparams,))
+    Ilist = np.array([Iext(hhparams, t) for t in tList])
+    return soln, Ilist
 
 def euler(tList, hhparams):
     """
@@ -95,13 +96,27 @@ def euler(tList, hhparams):
     dt = hhparams.get('dt')
     Vrest = hhparams.get('Vrest')
     guess = np.array([Vrest,m_inf(Vrest), h_inf(Vrest), n_inf(Vrest)])
+    
+    if 'noisy' in hhparams.get('system'):
+        noise_ = hhparams.get('noise')[0]
+        hhparams.update({'noise_t': noise_})
     if 'coupled' in hhparams.get('system'):
         soln = np.zeros([hhparams.get('pop'), len(tList), 4])
         soln[:,0,:] = guess
         guess = soln[:,0,:]
+        
+        Vi = np.tile(soln[:,0,0], (hhparams.get('pop'),1))
+        Vj = Vi.T
+        Vij = Vi-Vj
+        hhparams.update({'Vij':Vij})
+        Ilist = np.zeros([hhparams.get('pop'), len(tList)])
+        Ilist[:,0] = Iext(hhparams, 0)
     else:
         soln    = np.zeros([len(tList), 4])
         soln[0] = guess
+        Ilist = np.zeros(len(tList))
+        Ilist[0] = Iext(hhparams, tList[0])
+    
     for _i in range(len(tList)-1):
         if 'noisy' in hhparams.get('system'):
             noise_ = hhparams.get('noise')[_i]
@@ -113,9 +128,13 @@ def euler(tList, hhparams):
             hhparams.update({'Vij':Vij})
         next_ = odes(guess, tList[_i+1], hhparams).T
         guess += next_*dt
-        if 'coupled' in hhparams.get('system'): soln[:,_i+1, :] = guess
-        else: soln[_i+1] = guess
-    return soln
+        if 'coupled' in hhparams.get('system'): 
+            soln[:,_i+1, :] = guess
+            Ilist[:,_i+1] = Iext(hhparams, tList[_i+1])
+        else: 
+            soln[_i+1] = guess
+            Ilist[_i+1] = Iext(hhparams, tList[_i+1])
+    return soln, Ilist
 
 def rk4(tList, hhparams):
     """
@@ -163,13 +182,26 @@ def rk4(tList, hhparams):
     dt = hhparams.get('dt')
     Vrest = hhparams.get('Vrest')
     guess = np.array([Vrest, m_inf(Vrest), h_inf(Vrest), n_inf(Vrest)])
+    if 'noisy' in hhparams.get('system'):
+        noise_ = hhparams.get('noise')[0]
+        hhparams.update({'noise_t': noise_})
     if 'coupled' in hhparams.get('system'):
         soln = np.zeros([hhparams.get('pop'), len(tList), 4])
         soln[:,0,:] = guess
         guess = soln[:,0,:]
+        
+        Vi = np.tile(soln[:,0,0], (hhparams.get('pop'),1))
+        Vj = Vi.T
+        Vij = Vi-Vj
+        hhparams.update({'Vij':Vij})
+        Ilist = np.zeros([hhparams.get('pop'), len(tList)])
+        Ilist[:,0] = Iext(hhparams, 0)
     else:
         soln    = np.zeros([len(tList), 4])
         soln[0] = guess
+        Ilist = np.zeros(len(tList))
+        Ilist[0] = Iext(hhparams, tList[0])
+        
     for _i in range(len(tList)-1):
         if 'noisy' in hhparams.get('system'):
             noise_ = hhparams.get('noise')[_i]
@@ -184,6 +216,10 @@ def rk4(tList, hhparams):
         k3 = dt * odes(guess+0.5*k2, tList[_i+1]+0.5*dt, hhparams).T
         k4 = dt * odes(guess+k3,     tList[_i+1]+dt,     hhparams).T
         guess += (k1 + 2*(k2+k3) + k4)/6
-        if 'coupled' in hhparams.get('system'): soln[:,_i+1, :] = guess
-        else: soln[_i+1] = guess
-    return soln
+        if 'coupled' in hhparams.get('system'): 
+            soln[:,_i+1, :] = guess
+            Ilist[:,_i+1] = Iext(hhparams, tList[_i+1])
+        else: 
+            soln[_i+1] = guess
+            Ilist[_i+1] = Iext(hhparams, tList[_i+1])
+    return soln, Ilist

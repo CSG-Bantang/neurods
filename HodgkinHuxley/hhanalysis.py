@@ -97,8 +97,8 @@ def solveHH(system='single', solver='euler', Vrest=0,
         kwargs.update({'noise':noise})
     kwargs.update({'Vrest':Vrest, 'I0':I0, 'Is':Is, 'fs':fs, 'dt':dt, 'system':system})
     solver_ = solvers.get(solver)
-    soln = solver_(tList, kwargs).T
-    return soln, tList
+    soln, Ilist = solver_(tList, kwargs)
+    return soln.T, Ilist, tList
 
 def asymptoticChannels(Vmin=-100, Vmax=100, steps=400):
     Vspace = np.linspace(-100, 100, 400)
