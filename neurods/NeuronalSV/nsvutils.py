@@ -114,5 +114,13 @@ def getNeighbors(neuron, G):
     neighbor_list = np.array(list(G.neighbors(neuron))).astype(int)
     neighbor_states = np.array([G.nodes[n]['state'] for n in neighbor_list])
     return neighbor_states
-        
 
+def applyDefect(grid:list[float], defectIndex:list[int]) -> list[float]:
+    """
+    Applies spike-defect to the grid by setting the nodes with IDs 
+    specified by defectIndex to a state of 1 (maximum activation).
+
+    """
+    for n in defectIndex:
+        grid[n] = 1
+    return grid

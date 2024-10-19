@@ -9,7 +9,7 @@ Created on Sat Oct 19 14:04:31 2024
 import numpy as np
 import networkx as nx
 from .nsvutils import (fibonacci_sphere, get_centroids, 
-                       get_adjacency, updateGrid)
+                       get_adjacency, updateGrid, applyDefect)
 from numpy import random as nrand
 rng = nrand.default_rng(17)
 
@@ -48,7 +48,6 @@ def solveNSV(duration=30, L=4, a0=0.0, a1=0.8, a2=0.9, nl=1.0,
     defect : float, default is 0
         Density of spike-defective neurons.
         Must be between [0,1].
-        Not yet implemented.
     **kwargs : dict
         Additional arguments needed to specify shape parameters of beta 
         distribution. If mu and nu are specified, then the parameters a
@@ -71,7 +70,7 @@ def solveNSV(duration=30, L=4, a0=0.0, a1=0.8, a2=0.9, nl=1.0,
         x, y, z coordinates of the centroids generated using Spherical 
         Voronoi algorithm.
     defectIndices : optional, list with length int(defect*L*L)
-        Returns list of tuples indicating the CA indices of spike-defective 
+        Returns list of tuples indicating the node IDs of spike-defective 
         neurons if defect is nonzero.
 
     """
@@ -95,6 +94,10 @@ def solveNSV(duration=30, L=4, a0=0.0, a1=0.8, a2=0.9, nl=1.0,
     if init=='uniform':
         grid = rng.random(size=N, dtype=np.float32)
     
+    if defect:
+        rng.shuffle(defectIndex := np.asarray(range(N)))
+        grid = applyDefect(grid, defectIndex[:int(defect*N)])
+    
     state_init = dict(zip(nodes, grid))
     nx.set_node_attributes(G, state_init, 'state')
     grid = np.array(list(nx.get_node_attributes(G, 'state').values()))
@@ -105,9 +108,12 @@ def solveNSV(duration=30, L=4, a0=0.0, a1=0.8, a2=0.9, nl=1.0,
     propsCA = {'a0':a0, 'a1':a1, 'a2':a2, 'nl':nl}
     for t in range(duration):
         grid = updateGrid(N, grid, G, propsCA)
+        if defect: grid = applyDefect(grid, defectIndex[:int(defect*N)])
         states = dict(zip(nodes, grid))
         nx.set_node_attributes(G, states, 'state')
         soln[t+1,:] = grid
+    if defect:
+        return soln, edges, xyz, defectIndex[:int(defect*N)]
     return soln, edges, xyz
 
 def ncaReturnMap(a0:float, a1:float, a2:float, nl:float) -> tuple[list[float]]:
