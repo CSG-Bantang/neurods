@@ -33,8 +33,8 @@ def solveBB(system=1, duration=30, L=50, dq=1/3, df=1/3, k=1,
         Number of timesteps to solve BB CA.
         Must be nonzero.
     L : int, default is 50
-        lattice size for the BB CA. A square lattice with toroidal 
-        boundary conditions is generated.
+        lattice size for the BB CA. 
+        A square lattice with toroidal boundary conditions is generated.
         Must be greater than 0.
     dq : float, default is 1/3
         Initial density of "Q" cells in the CA.

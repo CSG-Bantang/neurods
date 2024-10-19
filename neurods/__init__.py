@@ -10,6 +10,7 @@ from .HodgkinHuxley import HodgkinHuxley
 from .GameofLife import GameofLife
 from .LogisticMapCA import LogisticMapCA
 from .BriansBrain import BriansBrain
+from .WolframECA import WolframECA
 
 from .NeuronalCA import NeuronalCA
 from .NCALayered import NCALayered
