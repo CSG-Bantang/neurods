@@ -30,7 +30,8 @@ NCAcmap = plt.get_cmap('magma')
 def plotActivation(x, y, show_diagonal=True):
     """
     Plotter function for normalized return map of activation equation.
-    A dashed diagonal, y = x, line is shown in the background for future analysis.
+    A dashed diagonal, y = x, line is shown in the background for 
+    future analysis.
 
     Parameters
     ----------
@@ -58,10 +59,9 @@ def plotActivation(x, y, show_diagonal=True):
 
     """
     fig, ax = plt.subplots(figsize=(6,6),
-                           subplot_kw=dict(xlim=(-0.05,1.05)
-                                         , ylim=(-0.05,1.05)
-                                         , xlabel='Previous Steady-State, $a_{in}$'
-                                         , ylabel='Next Steady-State, $a_{out}$'))
+              subplot_kw=dict(xlim=(-0.05,1.05), ylim=(-0.05,1.05)
+              , xlabel='Previous Steady-State, $a_{in}$'
+              , ylabel='Next Steady-State, $a_{out}$'))
     if show_diagonal:      ax.plot(x, x, color='gray', ls='--', lw=2)
     ax.plot(x, y, color='k', lw=4)
     ax.locator_params(axis='both', tight=True, nbins=5)
@@ -96,12 +96,12 @@ def plotDensity(soln:list[float]):
     density = np.mean(soln, axis=(1,2,3))
     densLay = np.mean(soln, axis=(2,3))
     fig, ax = plt.subplots(figsize=(6,5),
-                           subplot_kw=dict(xlim=(-0.5, duration+0.5)
-                                         , ylim=(-0.05, 1.05)
-                                         , xlabel='Generation'
-                                         , ylabel=r'CA Average $\langle a \rangle$'))
+              subplot_kw=dict(xlim=(-0.5, duration+0.5), ylim=(-0.05, 1.05)
+              , xlabel='Generation'
+              , ylabel=r'CA Average $\langle a \rangle$'))
     for layer in range(layers):
-        ax.plot(range(duration), densLay[:,layer], lw=1, label=f'layer {layer+1}', alpha=0.8)
+        ax.plot(range(duration), densLay[:,layer], lw=1, 
+                label=f'layer {layer+1}', alpha=0.8)
     ax.plot(range(duration), density, color='black', lw=4, marker= 'o', 
             markersize=7, markerfacecolor='w', label='all layers')
     ax.locator_params(axis='both', tight=True, nbins=5)
@@ -128,7 +128,8 @@ def animateNCAL(soln, out='animNCAL.gif'):
     duration, layers, L, _ = soln.shape
     resize = 200
     soln = np.hstack(tuple([soln[:,layer,:,:] for layer in range(layers)]))
-    ims = [Image.fromarray(np.uint8(NCAcmap(soln[i,:,:])*255)) for i in range(duration)]
+    ims = [Image.fromarray(np.uint8(NCAcmap(soln[i,:,:])*255)) 
+           for i in range(duration)]
     ims = [im.convert('P', palette=Image.ADAPTIVE, colors=100) for im in ims]
     ims = [ImageOps.contain(im, (resize,resize)) for im in ims]
     ims[0].save(fp=out, format='gif', append_images=ims, save_all=True, 

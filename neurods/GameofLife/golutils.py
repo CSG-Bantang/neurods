@@ -12,7 +12,8 @@ from numpy.typing import NDArray
 STATES=2
 Dead, Alive = range(STATES)
 
-def updateGrid(L:int, grid:NDArray[int], grid_coords:list[int]) -> NDArray[int]:
+def updateGrid(L:int, grid:NDArray[int], 
+               grid_coords:list[int]) -> NDArray[int]:
     """
     Updates the GOL grid applying golRules.
 

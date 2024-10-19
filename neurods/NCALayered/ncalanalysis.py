@@ -34,7 +34,7 @@ def solveNCAL(system=1, duration=30, layers=2, L=50, a0=0.0, a1=0.8, a2=0.9,
         7: spherical, outer-totalistic von Neumann
         8: spherical, inner-totalistic von Neumann
     duration : int, default is 30
-        Number of timesteps to solve Logistic CA.
+        Number of timesteps to solve Layered Neuronal CA.
         Must be nonzero.
     layers : int, default is 2
         Number of layers of the Neuronal CA.
@@ -54,7 +54,7 @@ def solveNCAL(system=1, duration=30, layers=2, L=50, a0=0.0, a1=0.8, a2=0.9,
         Nonlinearity of activation profile.
         Must be greater than 0.
     init : str, default is 'uniform'
-        Random distribution to initialize Logistic CA.
+        Random distribution to initialize Layered Neuronal CA.
         Accepted values: 'uniform' and 'beta'.
         If 'beta', additional `kwargs must be provided, 
         either ``(a=, b=)`` or ``(mu=, nu=)``.
@@ -74,7 +74,7 @@ def solveNCAL(system=1, duration=30, layers=2, L=50, a0=0.0, a1=0.8, a2=0.9,
     Returns
     -------
     soln : (duration, layer, L, L) array
-        Snapshots of the spatiotemporal dynamics of Logistic CA.
+        Snapshots of the spatiotemporal dynamics of Layaered Neuronal CA.
     defectIndices : optional, list with length int(defect*layers*L*L)
         Returns list of tuples indicating the CA indices of spike-defective 
         neurons if defect is nonzero.
@@ -103,7 +103,8 @@ def solveNCAL(system=1, duration=30, layers=2, L=50, a0=0.0, a1=0.8, a2=0.9,
     
     for t in range(duration):
         grid = updateGrid(L, grid, grid_coords, propsCA)
-        if defect: grid = applyDefect(grid, defectIndex[:int(defect*layers*L*L)])
+        if defect: grid = applyDefect(grid, 
+                                      defectIndex[:int(defect*layers*L*L)])
         soln[t+1,:,:,:] = grid
     if defect:
         return soln, defectIndex[:int(defect*layers*L*L)]

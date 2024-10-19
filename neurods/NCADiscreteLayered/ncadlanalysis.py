@@ -54,7 +54,8 @@ def solveNCADL(ncaActivity, defectIndices=None, dq=1/3, df=1/3, tRefrac=1):
     duration, layers, L, _ = ncaActivity.shape
     dr = 1-(dq+df)
     
-    dgrid = rng.choice([0,1,2], size=(layers,L,L), p=(dq,df,dr)).astype(np.int32)
+    dgrid = rng.choice([0,1,2], size=(layers,L,L), 
+                       p=(dq,df,dr)).astype(np.int32)
     grid_coords = list(itools.product(range(layers), range(L), range(L)))
     
     rgrid = np.zeros((layers,L,L), dtype=int)
@@ -68,8 +69,9 @@ def solveNCADL(ncaActivity, defectIndices=None, dq=1/3, df=1/3, tRefrac=1):
     
     pgrid = rng.random(size=ncaActivity.shape)
     
-    propsCA = {'L': L, 'layers':layers, 'pgrid':pgrid, 'ncaActivity':ncaActivity,
-              'timeRefrac':tRefrac,  'gridRefrac':rgrid}
+    propsCA = {'L': L, 'layers':layers, 'pgrid':pgrid, 
+               'ncaActivity':ncaActivity,
+               'timeRefrac':tRefrac,  'gridRefrac':rgrid}
     for t in range(1, duration):
         dgrid = updateGrid(L, t, dgrid, grid_coords, propsCA)
         if defectIndices: dgrid = applyDefect(dgrid, defectIndices)

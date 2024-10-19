@@ -99,7 +99,8 @@ def animateNCAD(dsoln, out='animNCAD.gif'):
     """
     duration, L, _ = dsoln.shape
     resize = 200
-    ims = [Image.fromarray(np.uint8(QFRcmap(dsoln[i,:,:]/2)*255)) for i in range(duration)]
+    ims = [Image.fromarray(np.uint8(QFRcmap(dsoln[i,:,:]/2)*255)) 
+           for i in range(duration)]
     ims = [im.convert('P', palette=Image.ADAPTIVE, colors=3) for im in ims]
     ims = [ImageOps.contain(im, (resize,resize)) for im in ims]
     ims[0].save(fp=out, format='gif', append_images=ims, save_all=True, 

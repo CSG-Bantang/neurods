@@ -1,42 +1,32 @@
 #!/usr/bin/env python3
 # -*- coding: utf-8 -*-
 """
-Created on Fri Oct 18 13:28:51 2024
+Created on Sat Oct 19 14:04:31 2024
 
 @author: reinierramos
 """
 
 import numpy as np
-import itertools as itools
-from .neuronalcautils import (applyDefect, updateGrid)
-
+import networkx as nx
+from .nsvutils import (fibonacci_sphere, get_centroids, 
+                       get_adjacency, updateGrid)
 from numpy import random as nrand
 rng = nrand.default_rng(17)
 
-def solveNCA(system=1, duration=30, L=50, a0=0.0, a1=0.8, a2=0.9, nl=1.0, 
+def solveNSV(duration=30, L=4, a0=0.0, a1=0.8, a2=0.9, nl=1.0, 
              init='uniform', defect=0, **kwargs):
     """
-    Solves the spatiotemporal snapshots of a Neuronal CA with lattice size L.
-    The system specifies the neighborhood and lattice boundary conditions, 
-    while the CA is initialized with random distribution specified by init.
+    Solves the spatiotemporal snapshots of a Neuronal Spherical Voronoi
+    with neuronal population of N = L*L. The SV is initialized with 
+    random distribution specified by init.
 
     Parameters
     ----------
-    system : int, default is 1
-        Specifies neighborhood and lattice boundary conditions.
-        1: toroidal,  outer-totalistic Moore
-        2: toroidal,  inner-totalistic Moore
-        3: toroidal,  outer-totalistic von Neumann
-        4: toroidal,  outer-totalistic von Neumann
-        5: spherical, outer-totalistic Moore
-        6: spherical, inner-totalistic Moore
-        7: spherical, outer-totalistic von Neumann
-        8: spherical, inner-totalistic von Neumann
     duration : int, default is 30
-        Number of timesteps to solve Neuronal CA.
+        Number of timesteps to solve Neuronal SV.
         Must be nonzero.
-    L : int, default is 50
-        Lattice size for the LCA.
+    L : int, default is 4
+        Lattice size for the NSV.
         Must be greater than 0.
     a0 : float, default is 0.0
         Minimum input threshold
@@ -51,13 +41,14 @@ def solveNCA(system=1, duration=30, L=50, a0=0.0, a1=0.8, a2=0.9, nl=1.0,
         Nonlinearity of activation profile.
         Must be greater than 0.
     init : str, default is 'uniform'
-        Random distribution to initialize Neuronal CA.
+        Random distribution to initialize Neuronal SV.
         Accepted values: 'uniform' and 'beta'.
         If 'beta', additional `kwargs must be provided, 
         either ``(a=, b=)`` or ``(mu=, nu=)``.
     defect : float, default is 0
         Density of spike-defective neurons.
         Must be between [0,1].
+        Not yet implemented.
     **kwargs : dict
         Additional arguments needed to specify shape parameters of beta 
         distribution. If mu and nu are specified, then the parameters a
@@ -70,40 +61,54 @@ def solveNCA(system=1, duration=30, L=50, a0=0.0, a1=0.8, a2=0.9, nl=1.0,
 
     Returns
     -------
-    soln : (duration, L, L) array
-        Snapshots of the spatiotemporal dynamics of Neuronal CA.
+    soln : (duration, N) array
+        where N = L*L, the total number of neurons.
+        Snapshots of the spatiotemporal dynamics of Neuronal SV.
+    edges : (E, 2) array
+        where E is the number of edges generated using Spherical 
+        Voronoi algorithm.
+    xyz : (N, 3) array
+        x, y, z coordinates of the centroids generated using Spherical 
+        Voronoi algorithm.
     defectIndices : optional, list with length int(defect*L*L)
         Returns list of tuples indicating the CA indices of spike-defective 
         neurons if defect is nonzero.
 
     """
+    N = L*L
+    fiboverts = fibonacci_sphere(N)
+    centroverts = get_centroids(fiboverts)
+    edgelist = get_adjacency(centroverts)
+    G = nx.Graph(edgelist)
+    
+    nodes = np.array(sorted(G.nodes()))
+    edges = np.array(list(G.edges()))
+    xyz = np.asarray(centroverts)
+    
     if init=='beta' and kwargs.get('a') and kwargs.get('b'):
         a, b = kwargs.get('a'), kwargs.get('b')
-        grid = rng.beta(a, b, size=(L, L)).astype(np.float32)
+        grid = rng.beta(a, b, size=N).astype(np.float32)
     if init=='beta' and kwargs.get('mu') and kwargs.get('nu'):
         mu, nu = kwargs.get('mu'), kwargs.get('nu')
         a, b = mu*nu, (1-mu)*nu
-        grid = rng.beta(a, b, size=(L, L)).astype(np.float32)
+        grid = rng.beta(a, b, size=N).astype(np.float32)
     if init=='uniform':
-        grid = rng.random(size=(L,L), dtype=np.float32)
-    grid_coords = list(itools.product(range(L), repeat=2))
+        grid = rng.random(size=N, dtype=np.float32)
     
-    if defect:
-        rng.shuffle(defectIndex := grid_coords.copy())
-        grid = applyDefect(grid, defectIndex[:int(defect*L*L)])
+    state_init = dict(zip(nodes, grid))
+    nx.set_node_attributes(G, state_init, 'state')
+    grid = np.array(list(nx.get_node_attributes(G, 'state').values()))
     
-    soln = np.zeros((duration+1, L,L), dtype=np.float32)
-    soln[0,:,:] = grid
+    soln = np.zeros((duration+1, N))
+    soln[0,:] = grid
     
-    propsCA = {'system':system, 'L': L, 'a0':a0, 'a1':a1, 'a2':a2, 'nl':nl}
-    
+    propsCA = {'a0':a0, 'a1':a1, 'a2':a2, 'nl':nl}
     for t in range(duration):
-        grid = updateGrid(L, grid, grid_coords, propsCA)
-        if defect: grid = applyDefect(grid, defectIndex[:int(defect*L*L)])
-        soln[t+1,:,:] = grid
-    if defect:
-        return soln, defectIndex[:int(defect*L*L)]
-    return soln
+        grid = updateGrid(N, grid, G, propsCA)
+        states = dict(zip(nodes, grid))
+        nx.set_node_attributes(G, states, 'state')
+        soln[t+1,:] = grid
+    return soln, edges, xyz
 
 def ncaReturnMap(a0:float, a1:float, a2:float, nl:float) -> tuple[list[float]]:
     """

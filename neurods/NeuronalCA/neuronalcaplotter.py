@@ -30,7 +30,8 @@ NCAcmap = plt.get_cmap('magma')
 def plotActivation(x, y, show_diagonal=True):
     """
     Plotter function for normalized return map of activation equation.
-    A dashed diagonal, y = x, line is shown in the background for future analysis.
+    A dashed diagonal, y = x, line is shown in the background for 
+    future analysis.
 
     Parameters
     ----------
@@ -58,10 +59,9 @@ def plotActivation(x, y, show_diagonal=True):
 
     """
     fig, ax = plt.subplots(figsize=(6,6),
-                           subplot_kw=dict(xlim=(-0.05,1.05)
-                                         , ylim=(-0.05,1.05)
-                                         , xlabel='Previous Steady-State, $a_{in}$'
-                                         , ylabel='Next Steady-State, $a_{out}$'))
+              subplot_kw=dict(xlim=(-0.05,1.05), ylim=(-0.05,1.05)
+              , xlabel='Previous Steady-State, $a_{in}$'
+              , ylabel='Next Steady-State, $a_{out}$'))
     if show_diagonal:      ax.plot(x, x, color='gray', ls='--', lw=2)
     ax.plot(x, y, color='k', lw=4)
     ax.locator_params(axis='both', tight=True, nbins=5)
@@ -95,11 +95,11 @@ def plotDensity(soln:list[float]):
     N = L*L
     density = np.mean(soln, axis=(1,2))
     fig, ax = plt.subplots(figsize=(6,5),
-                           subplot_kw=dict(xlim=(-0.5, duration+0.5)
-                                         , ylim=(-0.05, 1.05)
-                                         , xlabel='Generation'
-                                         , ylabel=r'CA Average $\langle a \rangle$'))
-    ax.plot(range(duration), density, color='darkgoldenrod', lw=2, marker= 'o', markersize=7, markerfacecolor='w')
+              subplot_kw=dict(xlim=(-0.5, duration+0.5), ylim=(-0.05, 1.05)
+              , xlabel='Generation'
+              , ylabel=r'CA Average $\langle a \rangle$'))
+    ax.plot(range(duration), density, color='darkgoldenrod', lw=2, 
+            marker= 'o', markersize=7, markerfacecolor='w')
     ax.locator_params(axis='both', tight=True, nbins=5)
     return fig, ax
 
@@ -122,7 +122,8 @@ def animateNCA(soln, out='animNCA.gif'):
     """
     duration, L, _ = soln.shape
     resize = 200
-    ims = [Image.fromarray(np.uint8(NCAcmap(soln[i,:,:])*255)) for i in range(duration)]
+    ims = [Image.fromarray(np.uint8(NCAcmap(soln[i,:,:])*255)) 
+           for i in range(duration)]
     ims = [im.convert('P', palette=Image.ADAPTIVE, colors=100) for im in ims]
     ims = [ImageOps.contain(im, (resize,resize)) for im in ims]
     ims[0].save(fp=out, format='gif', append_images=ims, save_all=True, 

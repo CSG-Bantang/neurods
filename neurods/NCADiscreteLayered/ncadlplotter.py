@@ -76,12 +76,15 @@ def plotDiscreteDensity(dsoln, soln):
     for i, layerColor in enumerate(layerColors, start=1):
         ax.plot(range(duration), densLay[:,i-1], color=layerColor, lw=1, 
                 label=fr' $\langle a \rangle$ layer {i}', alpha=0.6)
-        ax.plot(range(duration), densLayF[:,i-1], color=layerColor, lw=1, alpha=0.6)
-        ax.plot(range(duration), densLayR[:,i-1], color=layerColor, lw=1, alpha=0.6)
+        ax.plot(range(duration), densLayF[:,i-1], color=layerColor, 
+                lw=1, alpha=0.6)
+        ax.plot(range(duration), densLayR[:,i-1], color=layerColor, 
+                lw=1, alpha=0.6)
     ax.plot(range(duration), densityR, color='rebeccapurple', lw=3, 
             label='R all layers')
     ax.plot(range(duration), densityQ, color='black', ls='--', marker= 'd',
-            markersize=7, markerfacecolor='None', label='Q all layers', alpha=0.6)
+            markersize=7, markerfacecolor='None', 
+            label='Q all layers', alpha=0.6)
     ax.plot(range(duration), density, color='darkgoldenrod', lw=3, marker= 'o', 
             markersize=7, markerfacecolor='w', 
             label=r'$\langle a \rangle$ all layers')
@@ -111,7 +114,8 @@ def animateNCADL(dsoln, out='animNCADL.gif'):
     duration, layers, L, _ = dsoln.shape
     resize = 200
     soln = np.hstack(tuple([dsoln[:,layer,:,:] for layer in range(layers)]))
-    ims = [Image.fromarray(np.uint8(QFRcmap(soln[i,:,:])*255)) for i in range(duration)]
+    ims = [Image.fromarray(np.uint8(QFRcmap(soln[i,:,:])*255)) 
+           for i in range(duration)]
     ims = [im.convert('P', palette=Image.ADAPTIVE, colors=100) for im in ims]
     ims = [ImageOps.contain(im, (resize,resize)) for im in ims]
     ims[0].save(fp=out, format='gif', append_images=ims, save_all=True, 
@@ -152,8 +156,8 @@ def animate3DNCADL(dsoln, out='anim3DNCADL.gif'):
     ax.axis('off')
     ax.set_aspect('equal')
     anim = animation.FuncAnimation(fig, update, frames=range(duration),
-                                   fargs=(dsoln, ax, cmap, norm, x,y,z,filled, alpha),
-                                   interval=100, blit=True)
+           fargs=(dsoln, ax, cmap, norm, x,y,z,filled, alpha),
+           interval=100, blit=True)
     anim.save(out, dpi=200)
     
 def update(t:int, dsoln:list[float], ax, cmap, norm, x,y,z,filled, alpha):

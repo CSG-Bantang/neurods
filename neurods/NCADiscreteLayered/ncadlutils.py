@@ -52,5 +52,5 @@ def discreteRules(cell:int, firingCondition:bool, refracCondition:bool):
     solveNCAD(ncaActivity, tRefrac=1)
 
     """
-    return R*(cell==F) + Q*(not refracCondition)*(cell==R) + F*firingCondition*(cell==Q) + \
-            R*refracCondition*(cell==R)
+    return R*(cell==F) + Q*(not refracCondition)*(cell==R) + \
+           F*firingCondition*(cell==Q) + R*refracCondition*(cell==R)

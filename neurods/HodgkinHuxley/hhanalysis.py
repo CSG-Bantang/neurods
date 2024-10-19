@@ -28,7 +28,8 @@ class SolverError(Exception):
         self.solver=solver
         super().__init__(msg)
 
-def makeTimeList(ti:float=0, tf:float=100, dt:float=0.025) -> npt.NDArray[float]:
+def makeTimeList(ti:float=0, tf:float=100, 
+                 dt:float=0.025) -> npt.NDArray[float]:
     """
     Generates an (d,) array of t values from ti to tf with steps dt, 
     where d = (tf-ti)/dt.
