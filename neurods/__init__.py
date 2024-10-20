@@ -18,5 +18,7 @@ from .NCADiscrete import NCADiscrete
 from .NCADiscreteLayered import NCADiscreteLayered
 
 from .MorrisLecar import MorrisLecar
-# from .WilsonCowan import WilsonCowan
 from .NeuronalSV import NeuronalSV
+from .WilsonCowan import WilsonCowan
+
+from .toolkit import toolkit

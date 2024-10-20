@@ -140,7 +140,7 @@ def euler(tList, kwargs):
 
 def rk4(tList, kwargs):
     """
-    Solve the ODEs using the forward Euler method.
+    Solve the ODEs using the Runge-Kutta 4th order method.
 
     Parameters
     ----------

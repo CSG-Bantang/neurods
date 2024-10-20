@@ -95,7 +95,7 @@ def Iext(kwargs, t):
     Parameters
     ----------
     kwargs : dict
-        Parameters defining the HH system and input current such as,
+        Parameters defining the HH system and input current.
     t : float
         Time for which input I is calculated.
 
